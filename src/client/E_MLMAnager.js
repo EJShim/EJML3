@@ -17,21 +17,20 @@ function E_MLManager(Mgr, network)
 
 E_MLManager.prototype.Initialize = function(network)
 {
+
+  //input 20x20x20, output 5 classes
   var layer_defs = [];
-  // input layer of size 1x1x2 (all volumes are 3D)
   layer_defs.push({type:'input', out_sx:20, out_sy:20, out_depth:20});
-
-  // some fully connected layers
-  layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
-  layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
-
-
-  // a softmax classifier predicting probabilities for two classes: 0,1
+  layer_defs.push({type:'conv', sx:5, filters:16, stride:1, pad:2, activation:'relu'});
+  layer_defs.push({type:'pool', sx:2, stride:2});
+  layer_defs.push({type:'conv', sx:5, filters:20, stride:1, pad:2, activation:'relu'});
+  layer_defs.push({type:'pool', sx:2, stride:2});
+  layer_defs.push({type:'conv', sx:5, filters:20, stride:1, pad:2, activation:'relu'});
+  layer_defs.push({type:'pool', sx:2, stride:2});
   layer_defs.push({type:'softmax', num_classes:5});
 
-
-  // this.network.makeLayers(layer_defs);
-  this.network.fromJSON( JSON.parse(network) );
+  this.network.makeLayers(layer_defs);
+  // this.network.fromJSON( JSON.parse(network) );
 
 }
 
@@ -72,6 +71,10 @@ E_MLManager.prototype.PutVolume = function( volume )
     }
   }
 
+  //Update Graph with loss function
+  this.Mgr.UpdateGraph( probability.w[volume.class] );
+
+  
   //Show Probability
   for(var i=0 ; i<5 ; i++){
     var prob = probability.w[i] * 100

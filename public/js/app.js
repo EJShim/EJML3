@@ -43993,18 +43993,20 @@ function E_MLManager(Mgr, network)
 
 E_MLManager.prototype.Initialize = function(network)
 {
+
+  //input 20x20x20, output 5 classes
   var layer_defs = [];
-  // input layer of size 1x1x2 (all volumes are 3D)
   layer_defs.push({type:'input', out_sx:20, out_sy:20, out_depth:20});
-  // some fully connected layers
-  layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
-  layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
-  // a softmax classifier predicting probabilities for two classes: 0,1
+  layer_defs.push({type:'conv', sx:5, filters:16, stride:1, pad:2, activation:'relu'});
+  layer_defs.push({type:'pool', sx:2, stride:2});
+  layer_defs.push({type:'conv', sx:5, filters:20, stride:1, pad:2, activation:'relu'});
+  layer_defs.push({type:'pool', sx:2, stride:2});
+  layer_defs.push({type:'conv', sx:5, filters:20, stride:1, pad:2, activation:'relu'});
+  layer_defs.push({type:'pool', sx:2, stride:2});
   layer_defs.push({type:'softmax', num_classes:5});
 
-
-  // this.network.makeLayers(layer_defs);
-  this.network.fromJSON( JSON.parse(network) );
+  this.network.makeLayers(layer_defs);
+  // this.network.fromJSON( JSON.parse(network) );
 
 }
 
@@ -44045,6 +44047,10 @@ E_MLManager.prototype.PutVolume = function( volume )
     }
   }
 
+  //Update Graph with loss function
+  this.Mgr.UpdateGraph( probability.w[volume.class] );
+
+  
   //Show Probability
   for(var i=0 ; i<5 ; i++){
     var prob = probability.w[i] * 100
@@ -44102,12 +44108,19 @@ function E_Manager()
 
   this.m_bRunTrainning = false;
 
+  this.dataArray = [
+                    ['Iteration', 'Loss'],
+                    [0, 1.0]
+                  ];
+
 }
 
 E_Manager.prototype.Initialize = function()
 {
   $$("ID_LOG").getNode().style.marginLeft = "50px";
   $$("ID_LOG").getNode().style.marginTop = "15px";
+
+  $$("ID_GRAPH").getNode().style.marginLeft = "3px";
 
 
   //Initialzie Render Window
@@ -44475,6 +44488,49 @@ E_Manager.prototype.AppendLog = function(text)
   $$("ID_LOG").getNode().innerHTML += text;
 }
 
+E_Manager.prototype.UpdateGraph = function(graph)
+{
+  var val = 1 - graph;
+  //Update Loss Function Data Array
+  var length = this.dataArray.length + 1
+  this.dataArray.push( [length, val] );
+
+  // Load the Visualization API and the corechart package.
+  google.charts.load('current', {'packages':['corechart']});
+
+
+  // Set a callback to run when the Google Visualization API is loaded.
+  google.charts.setOnLoadCallback(this.DrawChart.bind(this));
+
+}
+
+E_Manager.prototype.DrawChart = function()
+{
+  var data = google.visualization.arrayToDataTable(this.dataArray);
+
+  var options = {
+    title: ' Loss ',
+    curveType: 'function',
+    // backgroundColor: '#FFFFFF',
+    vAxis: {
+      viewWindowMode:'explicit',
+      viewWindow: {
+        max:1.0,
+        min:0.0
+      }
+    },
+    lineWidth: 1,
+    colors:['#ff0000'],
+    chartArea:{left:"5%",top:"10%",width:"95%",height:"80%"}
+    // legend: { position: 'bottom' }
+  };
+
+  var chart = new google.visualization.LineChart($$("ID_GRAPH").getNode());
+
+
+  chart.draw(data, options);
+}
+
 E_Manager.prototype.OnRunTrainning = function(value)
 {
   if(value === 1){
@@ -44605,7 +44661,12 @@ var l_leftMenu = {id:"ID_VIEW_LEFT", view:"template"};
 var l_rightMenu = {id:"ID_VIEW_RIGHT", view:"template"};
 
 //Log Menuv
-var l_logMenu = {id:"ID_LOG", view:"template", gravity:0.3};
+var l_logMenu = {id:"ID_LOG", view:"template"};
+var l_graph = {id:"ID_GRAPH", view:"template", gravity: 2};
+
+
+
+
 
 var layout = new webix.ui({
   rows:[
@@ -44618,7 +44679,14 @@ var layout = new webix.ui({
       ]
     },
     {view:"resizer"},
-    l_logMenu
+    {
+      cols:[
+          l_logMenu,
+          {view:"resizer"},
+          l_graph
+      ], gravity:0.8
+    }
+
   ]
 })
 

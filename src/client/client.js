@@ -28,7 +28,12 @@ var l_leftMenu = {id:"ID_VIEW_LEFT", view:"template"};
 var l_rightMenu = {id:"ID_VIEW_RIGHT", view:"template"};
 
 //Log Menuv
-var l_logMenu = {id:"ID_LOG", view:"template", gravity:0.3};
+var l_logMenu = {id:"ID_LOG", view:"template"};
+var l_graph = {id:"ID_GRAPH", view:"template", gravity: 2};
+
+
+
+
 
 var layout = new webix.ui({
   rows:[
@@ -41,7 +46,14 @@ var layout = new webix.ui({
       ]
     },
     {view:"resizer"},
-    l_logMenu
+    {
+      cols:[
+          l_logMenu,
+          {view:"resizer"},
+          l_graph
+      ], gravity:0.8
+    }
+
   ]
 })
 

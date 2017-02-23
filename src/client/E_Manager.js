@@ -23,12 +23,19 @@ function E_Manager()
 
   this.m_bRunTrainning = false;
 
+  this.dataArray = [
+                    ['Iteration', 'Loss'],
+                    [0, 1.0]
+                  ];
+
 }
 
 E_Manager.prototype.Initialize = function()
 {
   $$("ID_LOG").getNode().style.marginLeft = "50px";
   $$("ID_LOG").getNode().style.marginTop = "15px";
+
+  $$("ID_GRAPH").getNode().style.marginLeft = "3px";
 
 
   //Initialzie Render Window
@@ -394,6 +401,49 @@ E_Manager.prototype.SetLog = function(text)
 E_Manager.prototype.AppendLog = function(text)
 {
   $$("ID_LOG").getNode().innerHTML += text;
+}
+
+E_Manager.prototype.UpdateGraph = function(graph)
+{
+  var val = 1 - graph;
+  //Update Loss Function Data Array
+  var length = this.dataArray.length + 1
+  this.dataArray.push( [length, val] );
+
+  // Load the Visualization API and the corechart package.
+  google.charts.load('current', {'packages':['corechart']});
+
+
+  // Set a callback to run when the Google Visualization API is loaded.
+  google.charts.setOnLoadCallback(this.DrawChart.bind(this));
+
+}
+
+E_Manager.prototype.DrawChart = function()
+{
+  var data = google.visualization.arrayToDataTable(this.dataArray);
+
+  var options = {
+    title: ' Loss ',
+    curveType: 'function',
+    // backgroundColor: '#FFFFFF',
+    vAxis: {
+      viewWindowMode:'explicit',
+      viewWindow: {
+        max:1.0,
+        min:0.0
+      }
+    },
+    lineWidth: 1,
+    colors:['#ff0000'],
+    chartArea:{left:"5%",top:"10%",width:"95%",height:"80%"}
+    // legend: { position: 'bottom' }
+  };
+
+  var chart = new google.visualization.LineChart($$("ID_GRAPH").getNode());
+
+
+  chart.draw(data, options);
 }
 
 E_Manager.prototype.OnRunTrainning = function(value)
