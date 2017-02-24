@@ -74,7 +74,7 @@ E_MLManager.prototype.PutVolume = function( volume )
   //Update Graph with loss function
   this.Mgr.UpdateGraph( probability.w[volume.class] );
 
-  
+
   //Show Probability
   for(var i=0 ; i<5 ; i++){
     var prob = probability.w[i] * 100
@@ -95,7 +95,7 @@ E_MLManager.prototype.PutVolume = function( volume )
 
   //Train Data
   if(volume.class !== null){
-    var trainer = new convnetjs.Trainer(this.network, {learning_rate:0.01, l2_decay:0.001});
+    var trainer = new convnetjs.Trainer(this.network, {learning_rate:0.02, l2_decay:0.001});
     trainer.train(convVol, volume.class);
 
     ///Save Network

@@ -44050,7 +44050,7 @@ E_MLManager.prototype.PutVolume = function( volume )
   //Update Graph with loss function
   this.Mgr.UpdateGraph( probability.w[volume.class] );
 
-  
+
   //Show Probability
   for(var i=0 ; i<5 ; i++){
     var prob = probability.w[i] * 100
@@ -44071,7 +44071,7 @@ E_MLManager.prototype.PutVolume = function( volume )
 
   //Train Data
   if(volume.class !== null){
-    var trainer = new convnetjs.Trainer(this.network, {learning_rate:0.01, l2_decay:0.001});
+    var trainer = new convnetjs.Trainer(this.network, {learning_rate:0.02, l2_decay:0.001});
     trainer.train(convVol, volume.class);
 
     ///Save Network
@@ -44089,15 +44089,12 @@ var E_MLManager = require('./E_MLManager.js');
 //Interactor
 var E_Interactor = require('./E_Interactor.js');
 
-
 //STL Loader
 var STLLoader = require('three-stl-loader')(THREE);
 function E_Manager()
 {
   var m_socketMgr = new E_SocketManager(this);
   this.mlMgr = null;
-
-
   this.renderer = [];
 
   this.SocketMgr = function()
@@ -44109,10 +44106,12 @@ function E_Manager()
   this.m_bRunTrainning = false;
 
   this.dataArray = [
-                    ['Iteration', 'Loss'],
-                    [0, 1.0]
+                    ['Iteration', 'Loss']
                   ];
 
+  this.batchSize = 10;
+  this.curIter = 0;
+  this.curScore = 0;
 }
 
 E_Manager.prototype.Initialize = function()
@@ -44490,18 +44489,26 @@ E_Manager.prototype.AppendLog = function(text)
 
 E_Manager.prototype.UpdateGraph = function(graph)
 {
-  var val = 1 - graph;
-  //Update Loss Function Data Array
-  var length = this.dataArray.length + 1
-  this.dataArray.push( [length, val] );
+  this.curIter ++;
 
-  // Load the Visualization API and the corechart package.
-  google.charts.load('current', {'packages':['corechart']});
+  var val = Math.log(graph) * -1;
+  this.curScore += val;
+  this.curScore /= this.curIter;
 
+  if(this.curIter % this.batchSize == 0){
+    //Update Loss Function Data Array
+    var length = this.dataArray.length - 1;
+    length *= 10;
+    this.dataArray.push( [length, this.curScore] );
 
-  // Set a callback to run when the Google Visualization API is loaded.
-  google.charts.setOnLoadCallback(this.DrawChart.bind(this));
+    // Load the Visualization API and the corechart package.
+    google.charts.load('current', {'packages':['corechart']});
 
+    // Set a callback to run when the Google Visualization API is loaded.
+    google.charts.setOnLoadCallback(this.DrawChart.bind(this));
+
+    this.curIter = 0;
+  }
 }
 
 E_Manager.prototype.DrawChart = function()
@@ -44511,14 +44518,14 @@ E_Manager.prototype.DrawChart = function()
   var options = {
     title: ' Loss ',
     curveType: 'function',
-    // backgroundColor: '#FFFFFF',
-    vAxis: {
-      viewWindowMode:'explicit',
-      viewWindow: {
-        max:1.0,
-        min:0.0
-      }
-    },
+    backgroundColor: '#FFFFFF',
+    // vAxis: {
+    //   viewWindowMode:'explicit',
+    //   viewWindow: {
+    //     max:3.0,
+    //     min:0.0
+    //   }
+    // },
     lineWidth: 1,
     colors:['#ff0000'],
     chartArea:{left:"5%",top:"10%",width:"95%",height:"80%"}
